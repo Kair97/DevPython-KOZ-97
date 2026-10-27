@@ -11,16 +11,16 @@ Python 3.12 или новее. Сторонние библиотеки не ну
 Команды выполняются из корня репозитория:
 
 ```bash
-python week1/homework.py week1/expenses.csv
+python homework.py expenses.csv
 ```
 
 Фильтры (необязательные):
 
 ```bash
-python week1/homework.py week1/expenses.csv --min 50000
-python week1/homework.py week1/expenses.csv --max 100000
-python week1/homework.py week1/expenses.csv --min 20000 --max 100000
-python week1/homework.py week1/expenses.csv --year 2026
+python homework.py expenses.csv --min 50000
+python homework.py expenses.csv --max 100000
+python homework.py expenses.csv --min 20000 --max 100000
+python homework.py expenses.csv --year 2026
 ```
 
 | Флаг | Что делает |
@@ -29,7 +29,7 @@ python week1/homework.py week1/expenses.csv --year 2026
 | `--max N` | показать только суммы не больше N |
 | `--year Y` | учитывать только расходы за год Y |
 
-`--min` и `--max` применяются ко всем трём блокам (категории, месяцы, годы). `--year` отсекает расходы до подсчёта. Справка: `python week1/homework.py -h`.
+`--min` и `--max` применяются ко всем трём блокам (категории, месяцы, годы). `--year` отсекает расходы до подсчёта. Справка: `python homework.py -h`.
 
 ## Формат CSV
 
@@ -48,7 +48,9 @@ date,category,amount
 ## Пример вывода
 
 ```text
-$ python week1/homework.py week1/expenses.csv
+$ python homework.py expenses.csv
+Уникальных категорий: 8
+
 По категориям:
 Аренда: 170000.00
 Еда: 11400.00
@@ -72,7 +74,9 @@ $ python week1/homework.py week1/expenses.csv
 С фильтром:
 
 ```text
-$ python week1/homework.py week1/expenses.csv --min 50000
+$ python homework.py expenses.csv --min 50000
+Уникальных категорий: 8
+
 По категориям:
 Аренда: 170000.00
 Продукты: 61100.00
