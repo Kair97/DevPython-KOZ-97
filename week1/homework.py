@@ -4,6 +4,7 @@ import argparse
 import csv 
 from datetime import date
 from collections.abc import Callable
+import math
 
 Expense = tuple[date, str, float]
 
@@ -13,21 +14,21 @@ class InputError(Exception):
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="tool", description="...")
     parser.add_argument("path", type=Path, help="input file")
-    parser.add_argument("--top", type=int, default=10)
-    parser.add_argument("-i", "--interactive", action="store_true", help="...")
     parser.add_argument("--report", choices=["category", "month", "year"], default="category", help="Type of report")
+    parser.add_argument("--min", type=float, default=None, help='Показать суммы не меньше чем n')
+    parser.add_argument("--max", type=float, default=None, help='Показать суммы не больше чем n')
+    parser.add_argument("--year", type=int, default=None, help='Показать только этот год')
     args = parser.parse_args() 
     return args
 
 
 def read_rows(path: Path) -> list[dict[str, str]]:
 
-    if path.suffix != ".csv":
-        raise InputError("Incorrect type of file please enter csv file")
+    if path.suffix.lower() != ".csv":
+        raise InputError("нужен файл .csv")
 
-    with open(path, encoding="utf-8", newline="") as f:
+    with open(path, encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
-        print(reader.fieldnames)
         return list(reader)
 
 
@@ -39,14 +40,12 @@ def parse_row(row: dict[str, str], line: int) -> Expense:
     except(ValueError, KeyError, TypeError):
         raise InputError(f"строка {line}: неверные данные")    
 
-    if amount <= 0:
-        raise InputError(f"строка {line}: amount нижу нуля")
+    if not math.isfinite(amount) or amount <= 0:
+        raise InputError(f"строка {line}: сумма должна быть больше 0")
 
     return (d, cat, amount)
 
-def load_extenses(rows: list[dict[str, str]]) -> list[Expense]:
-
-    res = []
+def load_expenses(rows: list[dict[str, str]]) -> list[Expense]:
 
     if not rows:
         raise InputError("Файл пустой")
@@ -74,68 +73,77 @@ def group_sum(expenses: list[Expense], key: Callable[[Expense], str]) -> dict[st
     return totals
 
 
-def format_totals(title: str, totals: dict[str, float]) -> str:
-    lines = [f"{k}: {v:.2f}" for k, v in sorted(totals.items())]
+def make_range_filter(low: float | None, high: float | None,) -> Callable[[float], bool]:
+    def check(total: float) -> bool:
+        if low is not None and total < low:
+            return False
+        if high is not None and total > high:
+            return False
+        
+        return True 
+    return check
 
+
+def format_totals(title: str, totals: dict[str, float]) -> str | None:
+
+    if not totals:
+        return None
+
+    lines = [f"{k}: {v:.2f}" for k, v in sorted(totals.items())]
     return title + "\n" + "\n".join(lines)
     
+def apply_filter(totals: dict[str, str], keep: Callable[[float], bool]) -> dict[str, float]:
 
+    filtered = {k: v for k, v in totals.items() if keep(v)}
 
-# def run_menu(expenses: list[Expense]) -> None:
-#      while True:
-#         print("1) By category\n2) By month\n3) Top N\n0) Exit")
-#         choice = input("> ").strip()
-#         if choice == "1":
-#             print_report
-#         elif choice == "2":
+    return filtered 
 
-#         elif choice == "0":
-#             break
-#         else:
-#             print("Unknown option")
+def print_report(expenses: list[Expense], keep: Callable[[float], bool]) -> None:
+    if not expenses:
+        print("Нет данных")
+        return
 
-
-
-
-def print_report(expenses: list[Expense]) -> None:
-
-    by_cat = format_totals("По категориям:", group_sum(expenses, category_of))
-    by_month = format_totals("По месяцу:", group_sum(expenses, month_of))
-    by_year = format_totals("По году:", group_sum(expenses, year_of))
-
-    print(by_cat)
+    categories = {category_of(e) for e in expenses}
+    print(f"Уникальных категорий: {len(categories)}")
     print()
-    print(by_month)
-    print()
-    print(by_year)
-    
 
-    return None 
+    by_cat = format_totals("По категориям:", apply_filter(group_sum(expenses, category_of), keep))
+    by_month = format_totals("По месяцам:", apply_filter(group_sum(expenses, month_of), keep))
+    by_year = format_totals("По годам:", apply_filter(group_sum(expenses, year_of), keep))
+
+    if by_cat is not None:
+        print(by_cat)
+        print()
+    if by_month is not None:
+        print(by_month)
+        print()
+    if by_year is not None:
+        print(by_year)
+    if not by_month and not by_year and not by_cat:
+        print("Нет данных")
     
 
 
-def main() -> None:
-
+def main() -> int:
     args = parse_args()
-    file_path = args.path
+    keep = make_range_filter(args.min, args.max)
+    try:
+        expenses = load_expenses(read_rows(args.path))
+    except InputError as e:
+        print(f"Ошибка: {e}", file=sys.stderr)
+        return 1
+    except UnicodeDecodeError:
+        print("Ошибка: файл не в кодировке UTF-8", file=sys.stderr)
+        return 1
+    except OSError as e:
+        print(f"Ошибка: не удалось прочитать файл ({e.strerror})", file=sys.stderr)
+        return 1
 
-    rows = read_rows(file_path)
-    # print(rows[0])
+    if args.year is not None:
+        expenses = [e for e in expenses if e[0].year == args.year]
 
-    expenses = load_extenses(rows)
-    # print(expenses[0])
-    # print(parse_row(rows[1], 1))
-
-    
-    if args.interactive:
-        run_menu(expenses)
-    else:
-        print_report(expenses)
+    print_report(expenses, keep)
     return 0
-    
-    
-
-    return None
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
