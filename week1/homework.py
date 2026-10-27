@@ -26,38 +26,60 @@ def read_rows(path: Path) -> list[dict[str, str]]:
 
     with open(path, encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
+        print(reader.fieldnames)
         return list(reader)
 
-def run_menu(expenses: list[Expense]) -> None:
-    #  while True:
-    #     print("1) By category\n2) By month\n3) Top N\n0) Exit")
-    #     choice = input("> ").strip()
-    #     if choice == "1":
 
-    #     elif choice == "2":
+def parse_row(row: dict[str, str], line: int) -> Expense:
+    try:
+        d = date.fromisoformat(row['date'])
+        cat = row['category'].strip()
+        amount = float(row['amount'])
+    except(ValueError, KeyError, TypeError):
+        raise InputError(f"строка {line}: неверные данные")    
 
-    #     elif choice == "0":
-    #         break
-    #     else:
-    #         print("Unknown option")
+    if amount <= 0:
+        raise InputError(f"строка {line}: amount нижу нуля")
+
+    return (d, cat, amount)
+
+# def run_menu(expenses: list[Expense]) -> None:
+#      while True:
+#         print("1) By category\n2) By month\n3) Top N\n0) Exit")
+#         choice = input("> ").strip()
+#         if choice == "1":
+            
+#         elif choice == "2":
+
+#         elif choice == "0":
+#             break
+#         else:
+#             print("Unknown option")
 
 
-def print_report(expenses: list[Expense]) -> None:
 
-    return None 
+
+# def print_report(expenses: list[Expense]) -> None:
+
+#     return None 
     
 
 
 def main() -> None:
 
     args = parse_args()
-    expenses = read_rows(args.path)
+    file_path = args.path
 
-    if args.interactive:
-        run_menu(expenses)
-    else:
-        print_report(expenses)
-    return 0
+    rows = read_rows(file_path)
+    print(rows[0])
+
+    print(parse_row(rows[1], 1))
+
+    # if args.interactive:
+    #     run_menu(expenses)
+    # else:
+    #     print_report(expenses)
+    # return 0
     
     
 
