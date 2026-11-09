@@ -49,6 +49,8 @@ date,category,amount
 
 ```text
 $ python week1/homework.py week1/expenses.csv
+Уникальных категорий: 8
+
 По категориям:
 Аренда: 170000.00
 Еда: 11400.00
@@ -73,6 +75,8 @@ $ python week1/homework.py week1/expenses.csv
 
 ```text
 $ python week1/homework.py week1/expenses.csv --min 50000
+Уникальных категорий: 8
+
 По категориям:
 Аренда: 170000.00
 Продукты: 61100.00
