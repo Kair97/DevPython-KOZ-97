@@ -1,2 +1,0 @@
-# Weeks 1 and 2 use only the Python standard library.
-# No third-party packages are required.
